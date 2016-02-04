@@ -1,0 +1,32 @@
+#!ipxe
+
+
+# Enable more DEBUGGING, while developing.
+#  (... after testing, comment it out.)
+set  DEBUG  true
+
+
+# URL Config
+set  repo-url   http://http.us.debian.org/debian/dists/jessie/main/installer-amd64
+set  base-url   ${repo-url}/current/images/netboot/debian-installer/amd64
+set  seed-url   http://169.254.169.254/v1/user-data
+
+
+# Cmd-Line Config
+set  common-opts    auto=true  priority=critical  url=${seed-url}  interface=eth0  vga=788
+set  prod-opts      DEBIAN_FRONTEND=noninteractive  noshell  preseed-md5=5da499872becccfeda2c4872f9171c3d
+set  debug-opts     ROOT_DEBUG=2  DEBCONF_DEBUG=5  finish-install/keep-consoles=true
+
+isset ${DEBUG}  &&  set kern-cmd-line ${common-opts} ${debug-opts}  # <-- debugging
+isset ${DEBUG}  ||  set kern-cmd-line ${common-opts} ${prod-opts}   # <-- production
+
+
+# Network Config
+ifconf --configurator dhcp net0
+
+
+# Go, Debian!
+kernel  ${base-url}/linux  ${kern-cmd-line}  ---  quiet
+initrd  ${base-url}/initrd.gz
+boot
+
