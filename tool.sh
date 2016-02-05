@@ -9,14 +9,14 @@ dir="$(cd -P -- "$(dirname -- "$0")" && pwd -P)"
 
 case "$1" in
 
-    build-initrd)
+    build)
         echo "Building initrd..."
         (
             cd "$dir"
             rm -rf build
             mkdir build
             cd preseed-initrd
-            find . -depth | cpio --quiet -H newc -o > ../build/preseed-initrd.cpio
+            find . | cpio -o -H newc -R 0:0 --quiet > ../build/preseed-initrd.cpio
             cd ../build
             gzip -9 -n > preseed-initrd.cpio.gz < preseed-initrd.cpio
             base64 > preseed-initrd.cpio.base64 < preseed-initrd.cpio
@@ -24,7 +24,7 @@ case "$1" in
         )
     ;;
 
-    vultr-create)
+    deploy)
         if [ -z "$2" ]; then
             echo "[error] You MUST specify a label/hostname."
             exit 1
@@ -47,6 +47,7 @@ case "$1" in
             echo "[error] Vultr API call failed."
             exit 1
         fi
+	echo ""
     ;;
 
     *)
