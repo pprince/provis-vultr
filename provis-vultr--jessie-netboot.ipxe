@@ -3,7 +3,7 @@
 
 # Enable more DEBUGGING, while developing.
 #  (... after testing, comment it out.)
-set  DEBUG  true
+set  DEBUG  false
 
 
 # URL Config
