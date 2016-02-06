@@ -1,10 +1,39 @@
 #!/bin/sh
 
 
+default_domain="littlebluetech.com"
 vultr_endpoint="https://api.vultr.com/v1"
 
+label="$2"
 
 dir="$(cd -P -- "$(dirname -- "$0")" && pwd -P)"
+
+
+checkname () {
+    if [ -z "${label}" ]; then
+        echo "[error] You MUST specify a label/hostname."
+        exit 1
+    fi
+
+    if echo "${label}" | grep -q -E -v '^[a-z0-9][-.a-z0-9]*[a-z0-9]$|^[a-z0-9]$' || \
+       echo "${label}" | grep -q '[-.][-.]'
+    then
+        printf "[error] Invalid label/hostname: \"${label}\".\n"
+        exit 1
+    fi
+
+    if echo "${label}" | grep -q '[.].*[.]' ; then
+        printf "[warning] Label/hostname looks like an FQDN...\n"
+        printf "          We will *NOT* append default domain.\n"
+        fqdn="${label}"
+    else
+        fqdn="${label}.${default_domain}"
+    fi
+
+    printf "\nHost's FQDN: ${fqdn}\n"
+
+    return 0
+}
 
 
 case "$1" in
@@ -25,14 +54,11 @@ case "$1" in
     ;;
 
     deploy)
-        if [ -z "$2" ]; then
-            echo "[error] You MUST specify a label/hostname."
-            exit 1
-        fi
-        echo "Sending Vultr API command: Create Server..."
+        checkname
+        printf "\n\n"
         (
-            cd "$dir"
             vultr_command=server/create
+            cd "$dir"
             printf "${vultr_endpoint}/${vultr_command}?api_key=" | \
                 cat - secrets/VULTR_API_KEY | \
                 sed -e 's/^/url = "/' -e 's/$/"/' | \
@@ -41,13 +67,13 @@ case "$1" in
                     -d "DCID=1" -d "VPSPLANID=29" \
                     -d "OSID=159" -d "SCRIPTID=14374" \
                     -d "enable_ipv6=yes" -d "enable_private_network=yes" \
-                    -d "label=${2}"
+                    -d "label=${fqdn}"
         )
         if [ "$?" -ne 0 ]; then
             echo "[error] Vultr API call failed."
             exit 1
         fi
-	echo ""
+        printf "\n\n"
     ;;
 
     *)
